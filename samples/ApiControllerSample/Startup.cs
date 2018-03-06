@@ -1,15 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿
+using System;
+using System.IO;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
+using Swashbuckle.AspNetCore.Swagger;
 
 namespace ApiControllerSample
 {
@@ -22,26 +21,59 @@ namespace ApiControllerSample
 
         public IConfiguration Configuration { get; }
 
-        // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
+
+            services.AddSwaggerGen(c =>
+            {
+                c.SwaggerDoc("v1", new Info { Title = "API Controller Sample", Version = "v1" });
+            });
+
+            services.AddEntityFrameworkSqlServer().AddDbContext<BasicApiContext>(options =>
+            {
+                var connectionString = Configuration["Data:DefaultConnection:ConnectionStringApiControllerSample"];
+                options.UseSqlServer(connectionString);
+            });
         }
 
-        // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IHostingEnvironment env)
         {
             if (env.IsDevelopment())
             {
+                //CreateDatabase(app.ApplicationServices, env.ContentRootPath);
                 app.UseDeveloperExceptionPage();
             }
-            else
-            {
-                app.UseHsts();
-            }
 
-            app.UseHttpsRedirection();
+            app.UseSwagger();
+
+            app.UseSwaggerUI(c =>
+            {
+                c.SwaggerEndpoint("/swagger/v1/swagger.json", "API Controller Sample");
+                c.RoutePrefix = "";
+            });
+
             app.UseMvc();
+        }
+
+        private void CreateDatabase(IServiceProvider services, string contentRoot)
+        {
+            using (var serviceScope = services.GetRequiredService<IServiceScopeFactory>().CreateScope())
+            {
+                var dbContext = serviceScope.ServiceProvider.GetRequiredService<BasicApiContext>();
+                dbContext.Database.EnsureDeleted();
+                Task.Delay(TimeSpan.FromSeconds(3)).Wait();
+                dbContext.Database.EnsureCreated();
+
+                using (var connection = dbContext.Database.GetDbConnection())
+                {
+                    connection.Open();
+
+                    var command = connection.CreateCommand();
+                    command.CommandText = File.ReadAllText(Path.Combine(contentRoot, "seed.sql"));
+                    command.ExecuteNonQuery();
+                }
+            }
         }
     }
 }
