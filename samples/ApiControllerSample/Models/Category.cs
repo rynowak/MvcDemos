@@ -1,10 +1,5 @@
 ﻿
 namespace ApiControllerSample
 {
-    public class Category
-    {
-        public int Id { get; set; }
-
-        public string Name { get; set; }
-    }
+    public class Category(int Id, string Name);
 }

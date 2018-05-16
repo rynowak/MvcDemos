@@ -2,6 +2,7 @@
 using System;
 using System.IO;
 using System.Threading.Tasks;
+using AutoMapper;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
@@ -25,6 +26,13 @@ namespace ApiControllerSample
         {
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
 
+            var mapperConfiguration = new MapperConfiguration(c =>
+            {
+                c.CreateMap<AddPetDto, Pet>();
+                c.CreateMap<EditPetDto, Pet>();
+            });
+            services.AddSingleton<IMapper>(new Mapper(mapperConfiguration));
+
             services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new Info { Title = "API Controller Sample", Version = "v1" });
@@ -41,7 +49,7 @@ namespace ApiControllerSample
         {
             if (env.IsDevelopment())
             {
-                //CreateDatabase(app.ApplicationServices, env.ContentRootPath);
+                CreateDatabase(app.ApplicationServices, env.ContentRootPath);
                 app.UseDeveloperExceptionPage();
             }
 
@@ -62,7 +70,6 @@ namespace ApiControllerSample
             {
                 var dbContext = serviceScope.ServiceProvider.GetRequiredService<BasicApiContext>();
                 dbContext.Database.EnsureDeleted();
-                Task.Delay(TimeSpan.FromSeconds(3)).Wait();
                 dbContext.Database.EnsureCreated();
 
                 using (var connection = dbContext.Database.GetDbConnection())

@@ -4,26 +4,23 @@ using System.ComponentModel.DataAnnotations;
 
 namespace ApiControllerSample
 {
-    public class Pet
-    {
-        public int Id { get; set; }
+    public class Pet(
+        int Id,
+        [Range(0, 150)] int Age,
+        Category Category, 
+        bool HasVaccinations,
+        [StringLength(50, MinimumLength = 2)] Name,
+        List<Image> Images = new List<Image>(),
+        List<Tag> Tags = new List<Tag>(),
+        string Status);
 
-        [Range(0, 150)]
-        public int Age { get; set; }
-
-        public Category Category { get; set; }
-
-        public bool HasVaccinations { get; set; }
-
-        [Required]
-        [StringLength(50, MinimumLength = 2)]
-        public string Name { get; set; }
-
-        public List<Image> Images { get; set; }
-
-        public List<Tag> Tags { get; set; }
-
-        [Required]
-        public string Status { get; set; }
-    }
+    public Pet With(
+        int Id = this.Id,
+        [Range(0, 150)] int Age = this.Age,
+        Category Category = this.Category,
+        bool HasVaccinations = this.HasVaccinations,
+        [StringLength(50, MinimumLength = 2)] Name = this.Name,
+        List<Image> Images = this.Images,
+        List<Tag> Tags = this.Tags,
+        string Status = this.Status)
 }
