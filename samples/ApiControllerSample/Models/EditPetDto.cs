@@ -4,10 +4,8 @@ using System.ComponentModel.DataAnnotations;
 
 namespace ApiControllerSample
 {
-    public class Pet
+    public class EditPetDto
     {
-        public int Id { get; set; }
-
         [Range(0, 150)]
         public int Age { get; set; }
 
@@ -19,11 +17,9 @@ namespace ApiControllerSample
         [StringLength(50, MinimumLength = 2)]
         public string Name { get; set; }
 
-        public List<Image> Images { get; set; } = new List<Image>();
-
-        public List<Tag> Tags { get; set; } = new List<Tag>();
+        public List<Tag> Tags { get; set; }
 
         [Required]
-        public string Status { get; set; } = "available";
+        public string Status { get; set; }
     }
 }

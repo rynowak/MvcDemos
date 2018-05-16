@@ -2,6 +2,7 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using AutoMapper;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -11,12 +12,15 @@ namespace ApiControllerSample
     [Route("/pet")]
     public class PetController : ControllerBase
     {
-        public PetController(BasicApiContext dbContext)
+        public PetController(BasicApiContext dbContext, IMapper mapper)
         {
             DbContext = dbContext;
+            Mapper = mapper;
         }
 
         public BasicApiContext DbContext { get; }
+
+        public IMapper Mapper { get; }
 
         [HttpGet("{id}", Name = "FindPetById")]
         public async Task<ActionResult<Pet>> FindById(int id)
@@ -83,8 +87,9 @@ namespace ApiControllerSample
         }
 
         [HttpPost]
-        public async Task<ActionResult<Pet>> AddPet([FromBody] Pet pet)
+        public async Task<ActionResult<Pet>> AddPet([FromBody] AddPetDto dto)
         {
+            var pet = Mapper.Map<Pet>(dto);
             DbContext.Pets.Add(pet);
 
             try
@@ -100,18 +105,15 @@ namespace ApiControllerSample
         }
 
         [HttpPut]
-        public async Task<ActionResult<Pet>> EditPet(int id, [FromBody] Pet pet)
+        public async Task<ActionResult<Pet>> EditPet(int id, [FromBody] EditPetDto dto)
         {
+            var pet = await DbContext.Pets.FindAsync(id);
             if (pet == null)
             {
-                return new NotFoundResult();
+                return NotFound();
             }
 
-            if (id != pet.Id)
-            {
-                return BadRequest();
-            }
-
+            Mapper.Map(dto, pet);
             DbContext.Entry(pet).State = EntityState.Modified;
 
             try
@@ -135,7 +137,7 @@ namespace ApiControllerSample
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeletePet(int id)
         {
-            var pet = await DbContext.Pets.FirstOrDefaultAsync(p => p.Id == id);
+            var pet = await DbContext.Pets.FindAsync(id);
             if (pet == null)
             {
                 return new NotFoundResult();
