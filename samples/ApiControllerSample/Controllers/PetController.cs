@@ -2,6 +2,7 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using AutoMapper;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -83,8 +84,15 @@ namespace ApiControllerSample
         }
 
         [HttpPost]
-        public async Task<ActionResult<Pet>> AddPet([FromBody] Pet pet)
+        public async Task<ActionResult<Pet>> AddPet([FromBody] AddPetDto dto)
         {
+            var pet = new Pet()
+            {
+                Age = dto.Age,
+                Category = dto.Category,
+                Name = dto.Name,
+            };
+
             DbContext.Pets.Add(pet);
 
             try
@@ -100,17 +108,20 @@ namespace ApiControllerSample
         }
 
         [HttpPut]
-        public async Task<ActionResult<Pet>> EditPet(int id, [FromBody] Pet pet)
+        public async Task<ActionResult<Pet>> EditPet(int id, [FromBody] EditPetDto dto)
         {
+            var pet = await DbContext.Pets.FindAsync(id);
             if (pet == null)
             {
-                return new NotFoundResult();
+                return NotFound();
             }
 
-            if (id != pet.Id)
-            {
-                return BadRequest();
-            }
+            pet.Age = dto.Age;
+            pet.Category = dto.Category;
+            pet.HasVaccinations = dto.HasVaccinations;
+            pet.Name = dto.Name;
+            pet.Status = dto.Status;
+            pet.Tags = dto.Tags;
 
             DbContext.Entry(pet).State = EntityState.Modified;
 
@@ -135,7 +146,7 @@ namespace ApiControllerSample
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeletePet(int id)
         {
-            var pet = await DbContext.Pets.FirstOrDefaultAsync(p => p.Id == id);
+            var pet = await DbContext.Pets.FindAsync(id);
             if (pet == null)
             {
                 return new NotFoundResult();
